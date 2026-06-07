@@ -126,7 +126,7 @@ spawn(function()
     })
 
 -- print("--------------------------------------------------------------------------");
-local Update = (loadstring(Game:HttpGet("https://raw.githubusercontent.com/ffgringoxp123-code/N-i-t-o-script/refs/heads/main/Gui")))();
+local Update = (loadstring(Game:HttpGet("https://raw.githubusercontent.com/ffgringoxp123-code/N-i-t-o-script/refs/heads/main/Gui.lua")))();
 if Update:LoadAnimation() then
 	Update:StartLoad();
 end;
