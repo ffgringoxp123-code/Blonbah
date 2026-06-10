@@ -1,0 +1,292 @@
+-- ==================== KITTYLOL MACRO: TRIPLE COMBO + BALL STATS ====================
+setfpscap(9999)
+repeat task.wait() until game:IsLoaded()
+
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local StatsService = game:GetService("Stats")
+
+-- [ PHẦN 1: HỆ THỐNG QUẢN LÝ (SYSTEM) ]
+System = {}
+System.__properties = {
+    __manual_spam_enabled = false,
+    __spam_rate = 240,
+    ManualSpamAnimationFix = true,
+    TriggerbotActive = false
+}
+System.manual_spam = {}
+System.parry = {}
+System.animation = {}
+
+local manualSpamStartTick = 0
+local lastManualSpamTick = 0
+local lastSpamTime_Manual1 = 0
+local spamInterval_Manual1 = 1/875
+local currentKey = Enum.KeyCode.E
+local spamActive = false
+
+-- Remote Hooking
+local remote, f_raw = nil, nil
+local c = {nil, nil, nil, nil, nil, nil, nil}
+
+local mt = getrawmetatable(game)
+local old = mt.__index
+setreadonly(mt, false)
+mt.__index = newcclosure(function(self, key)
+    if key == "FireServer" or key == "InvokeServer" then
+        return function(instance, ...)
+            local args = {...}
+            if #args >= 4 then
+                remote = instance
+                f_raw = old(instance, "FireServer")
+                for i = 1, 7 do c[i] = args[i] end
+            end
+            return old(self, key)(instance, ...)
+        end
+    end
+    return old(self, key)
+end)
+setreadonly(mt, true)
+
+-- [ CÁC HÀM THỰC THI ]
+function System.parry.execute()
+    if not (remote and f_raw) then return end
+    local cam = workspace.CurrentCamera
+    local char = LocalPlayer.Character
+    if not (char and char:FindFirstChild("HumanoidRootPart")) then return end
+    
+    local camCF = cam.CFrame
+    local events = {}
+    local Alive = workspace:FindFirstChild("Alive")
+    if Alive then
+        for _, v in ipairs(Alive:GetChildren()) do
+            if v ~= char and v.PrimaryPart then
+                local screenPos, isOnScreen = cam:WorldToScreenPoint(v.PrimaryPart.Position)
+                if isOnScreen then events[tostring(v)] = screenPos end
+            end
+        end
+    end
+    c[3], c[4], c[5], c[6] = camCF.LookVector, camCF, events, {cam.ViewportSize.X/2, cam.ViewportSize.Y/2}
+    pcall(function() f_raw(remote, unpack(c)) end)
+end
+
+function System.animation.spam_sequence()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        for _, track in pairs(char.Humanoid:GetPlayingAnimationTracks()) do
+            if track.Name:lower():find("parry") or track.Name:lower():find("slash") then track:Stop() end
+        end
+    end
+end
+
+-- [ PHẦN 2: TẠO GIAO DIỆN KITTYLOL + BALL STATS ]
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "KittylolUI_Enhanced"
+ScreenGui.ResetOnSpawn = false
+pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 180, 0, 220) -- Kéo dài để chứa Ball Stats
+MainFrame.Position = UDim2.new(0.5, -90, 0.5, -110)
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 15)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(255, 105, 180)
+MainStroke.Thickness = 2
+MainStroke.Parent = MainFrame
+
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 15)
+
+local Title = Instance.new("TextLabel")
+Title.Text = "Kittylol Macro"
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextColor3 = Color3.fromRGB(255, 105, 180)
+Title.TextSize = 16
+Title.Parent = MainFrame
+
+local PingLabel = Instance.new("TextLabel")
+PingLabel.Text = "Ping: -- ms"
+PingLabel.Size = UDim2.new(1, 0, 0, 20)
+PingLabel.Position = UDim2.new(0, 0, 0, 30)
+PingLabel.BackgroundTransparency = 1
+PingLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+PingLabel.TextSize = 13
+PingLabel.Parent = MainFrame
+
+local KeyButton = Instance.new("TextButton")
+KeyButton.Text = "[ E ]"
+KeyButton.Size = UDim2.new(0, 120, 0, 35)
+KeyButton.Position = UDim2.new(0.5, -60, 0, 55)
+KeyButton.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+KeyButton.TextColor3 = Color3.fromRGB(255, 105, 180)
+KeyButton.Font = Enum.Font.GothamBold
+KeyButton.Parent = MainFrame
+Instance.new("UICorner", KeyButton).CornerRadius = UDim.new(0, 8)
+
+-- Ball Stats UI Section
+local StatsContainer = Instance.new("Frame")
+StatsContainer.Size = UDim2.new(1, -20, 0, 110)
+StatsContainer.Position = UDim2.new(0, 10, 0, 100)
+StatsContainer.BackgroundTransparency = 1
+StatsContainer.Parent = MainFrame
+
+local Line = Instance.new("Frame")
+Line.Size = UDim2.new(1, 0, 0, 1)
+Line.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Line.BackgroundTransparency = 0.8
+Line.Parent = StatsContainer
+
+local CurrentLabel = Instance.new("TextLabel")
+CurrentLabel.Text = "Current Speed"
+CurrentLabel.Size = UDim2.new(1, 0, 0, 20)
+CurrentLabel.Position = UDim2.new(0, 0, 0, 5)
+CurrentLabel.BackgroundTransparency = 1
+CurrentLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+CurrentLabel.TextSize = 11
+CurrentLabel.Parent = StatsContainer
+
+local CurrentSpeed = Instance.new("TextLabel")
+CurrentSpeed.Text = "0.0"
+CurrentSpeed.Size = UDim2.new(1, 0, 0, 20)
+CurrentSpeed.Position = UDim2.new(0, 0, 0, 25)
+CurrentSpeed.BackgroundTransparency = 1
+CurrentSpeed.TextColor3 = Color3.fromRGB(255, 255, 255)
+CurrentSpeed.Font = Enum.Font.GothamBold
+CurrentSpeed.TextSize = 18
+CurrentSpeed.Parent = StatsContainer
+
+local PeakLabel = Instance.new("TextLabel")
+PeakLabel.Text = "Peak Speed"
+PeakLabel.Size = UDim2.new(1, 0, 0, 20)
+PeakLabel.Position = UDim2.new(0, 0, 0, 50)
+PeakLabel.BackgroundTransparency = 1
+PeakLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+PeakLabel.TextSize = 11
+PeakLabel.Parent = StatsContainer
+
+local PeakSpeed = Instance.new("TextLabel")
+PeakSpeed.Text = "0.0"
+PeakSpeed.Size = UDim2.new(1, 0, 0, 20)
+PeakSpeed.Position = UDim2.new(0, 0, 0, 70)
+PeakSpeed.BackgroundTransparency = 1
+PeakSpeed.TextColor3 = Color3.fromRGB(0, 255, 150)
+PeakSpeed.Font = Enum.Font.GothamBold
+PeakSpeed.TextSize = 18
+PeakSpeed.Parent = StatsContainer
+
+-- [ PHẦN 3: LOGIC BALL STATS & PING ]
+local peakVal = 0
+local lastBall = nil
+
+task.spawn(function()
+    while task.wait(0.01) do
+        -- Cập nhật Ping
+        local ping = math.floor(StatsService.Network.ServerStatsItem["Data Ping"]:GetValue())
+        PingLabel.Text = "Ping: " .. ping .. " ms"
+        
+        -- Cập nhật Ball Stats
+        local balls = workspace:FindFirstChild("Balls")
+        local activeBall = nil
+        local maxSpeed = 0
+        if balls then
+            for _, b in ipairs(balls:GetChildren()) do
+                if b:IsA("BasePart") then
+                    local s = b.Velocity.Magnitude
+                    if s > maxSpeed then maxSpeed = s activeBall = b end
+                end
+            end
+        end
+
+        if activeBall then
+            if activeBall ~= lastBall then peakVal = 0 lastBall = activeBall end
+            if maxSpeed > peakVal then peakVal = maxSpeed end
+            CurrentSpeed.Text = string.format("%.1f", maxSpeed)
+            PeakSpeed.Text = string.format("%.1f", peakVal)
+        else
+            CurrentSpeed.Text = "0.0"
+        end
+    end
+end)
+
+-- [ PHẦN 4: LOGIC TRIGGER & SPAM CONTROL ]
+local listening = false
+KeyButton.MouseButton1Click:Connect(function()
+    listening = true
+    KeyButton.Text = "..."
+end)
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if listening and input.UserInputType == Enum.UserInputType.Keyboard then
+        currentKey = input.KeyCode
+        KeyButton.Text = "[ " .. input.KeyCode.Name .. " ]"
+        listening = false
+    end
+end)
+
+-- Vòng lặp Triggerbot
+local function runTriggerbot()
+    local balls = workspace:FindFirstChild("Balls")
+    if not balls then return end
+    for _, b in ipairs(balls:GetChildren()) do
+        local target = b:GetAttribute("target") or (b:FindFirstChild("Target") and b.Target.Value)
+        if target == LocalPlayer.Name then
+            System.parry.execute()
+            if System.__properties.ManualSpamAnimationFix then System.animation.spam_sequence() end
+        end
+    end
+end
+
+-- Vòng lặp chính (Heartbeat) - Điều khiển 3 chế độ đồng thời
+RunService.Heartbeat:Connect(function()
+    local isPressed = not listening and UserInputService:IsKeyDown(currentKey)
+
+    if isPressed then
+        if not spamActive then
+            spamActive = true
+            System.__properties.__manual_spam_enabled = true
+            manualSpamStartTick = tick()
+            lastManualSpamTick = tick()
+            MainStroke.Color = Color3.fromRGB(255, 255, 255)
+        end
+
+        local now = tick()
+
+        -- 1. Manual 1 (Kittylol Gốc)
+        if now - lastSpamTime_Manual1 >= spamInterval_Manual1 then
+            lastSpamTime_Manual1 = now
+            System.parry.execute()
+        end
+
+        -- 2. Manual 2 (System Loop bù trừ gia tốc)
+        local baseRate = System.__properties.__spam_rate
+        local elapsed = now - manualSpamStartTick
+        local accelFactor = math.min(1 + (elapsed / 0.5) * 0.5, 1.5)
+        local interval = 1 / (baseRate * accelFactor)
+        
+        if now - lastManualSpamTick >= interval then
+            lastManualSpamTick = now
+            System.parry.execute()
+            if System.__properties.ManualSpamAnimationFix then System.animation.spam_sequence() end
+        end
+
+        -- 3. Triggerbot
+        runTriggerbot()
+
+    else
+        if spamActive then
+            spamActive = false
+            System.__properties.__manual_spam_enabled = false
+            MainStroke.Color = Color3.fromRGB(255, 105, 180)
+        end
+    end
+end)
+
+print("Kittylol Enhanced: Triple Manual + Ball Stats Loaded!")
