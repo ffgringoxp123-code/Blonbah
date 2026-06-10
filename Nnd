@@ -1,4 +1,3 @@
--- ==================== KITTYLOL MACRO: TRIPLE COMBO + BALL STATS ====================
 setfpscap(9999)
 repeat task.wait() until game:IsLoaded()
 
@@ -8,7 +7,6 @@ local LocalPlayer = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local StatsService = game:GetService("Stats")
 
--- [ PHẦN 1: HỆ THỐNG QUẢN LÝ (SYSTEM) ]
 System = {}
 System.__properties = {
     __manual_spam_enabled = false,
@@ -27,7 +25,6 @@ local spamInterval_Manual1 = 1/875
 local currentKey = Enum.KeyCode.E
 local spamActive = false
 
--- Remote Hooking
 local remote, f_raw = nil, nil
 local c = {nil, nil, nil, nil, nil, nil, nil}
 
@@ -50,7 +47,6 @@ mt.__index = newcclosure(function(self, key)
 end)
 setreadonly(mt, true)
 
--- [ CÁC HÀM THỰC THI ]
 function System.parry.execute()
     if not (remote and f_raw) then return end
     local cam = workspace.CurrentCamera
@@ -81,7 +77,6 @@ function System.animation.spam_sequence()
     end
 end
 
--- [ PHẦN 2: TẠO GIAO DIỆN KITTYLOL + BALL STATS ]
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "KittylolUI_Enhanced"
 ScreenGui.ResetOnSpawn = false
@@ -131,7 +126,6 @@ KeyButton.Font = Enum.Font.GothamBold
 KeyButton.Parent = MainFrame
 Instance.new("UICorner", KeyButton).CornerRadius = UDim.new(0, 8)
 
--- Ball Stats UI Section
 local StatsContainer = Instance.new("Frame")
 StatsContainer.Size = UDim2.new(1, -20, 0, 110)
 StatsContainer.Position = UDim2.new(0, 10, 0, 100)
